@@ -40,6 +40,9 @@ def load_contract(address, name=None):
     stor_defs = {}
 
     for f in contract['functions']:
+        if f is None:
+            continue
+            
         for k, v in f.items():
             # converting all the traces, and so on into tuples from lists
             # tuples are read-only, which we want, and also can work as indexes easier
