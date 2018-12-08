@@ -38,6 +38,7 @@ roles = {}
 
 for s, name in stor_defs.items():
     if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
+        role_address = read_address(address, s[3])
         roles[s] = {
             'name': name,
             'definition': s,
@@ -45,6 +46,7 @@ for s, name in stor_defs.items():
             'funcs': set(),
             'withdrawals': set(),
             'calls': set(),
+            'role_address': role_address
         }
 
 roles['anyone'] = {
@@ -54,6 +56,7 @@ roles['anyone'] = {
     'funcs': set(),
     'withdrawals': set(),
     'calls': set(),
+    'role_address': '',
 }
 
 roles['unknown'] = {
@@ -63,6 +66,7 @@ roles['unknown'] = {
     'funcs': set(),
     'withdrawals': set(),
     'calls': set(),
+    'role_address': '',
 }
 
 def find_opcodes(line, _):
@@ -229,7 +233,7 @@ print(f'\n{C.blue} # contract roles{C.end}')
 print()
 
 for stor in roles:
-    print(C.blue, pretty(stor), C.end)
+    print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['role_address'], C.end)
 
     if len(roles[stor]['setters']) > 0:
         print('  can be changed by:')
