@@ -44,13 +44,13 @@ def load_contract(address):
         print('    ',f['color_name'])
 
         if f['getter']:
-            stor_defs[f['getter']] = f['name']
+            stor_defs[f['getter']] = f['name'].split('(')[0]
 
     print()
     print(C.blue, '# storage definitions', C.end)
 
     for k,v in stor_defs.items():
-        print('    ', k, v)
+        print('    ', k, C.blue, v, C.end)
 
     return functions, stor_defs
 

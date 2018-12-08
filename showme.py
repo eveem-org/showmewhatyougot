@@ -48,6 +48,10 @@ def walk_trace(trace, f=print):
             res.extend(walk_trace(trace, f))
             continue
 
+        if opcode(line) == 'LOOP':
+            trace, label = line[1:]
+            res.extend(walk_trace(trace, f))
+
     return res
 
 def find_opcodes(line):
