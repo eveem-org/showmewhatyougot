@@ -33,25 +33,27 @@ else:
 functions, stor_defs = load_contract(address, contract_name)
 pretty = partial(prettify, stor_defs)
 
+roles = {}
+
+for s, name in stor_defs.items():
+    if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
+        roles[s] = {
+            'name': name,
+            'definition': s,
+            'setters': list(),
+            'funcs': set(),
+        }
 
 def find_opcodes(line, _):
     return opcode(line)
 
-
-def find_caller_req(line, _):
-    # finds IFs: (IF (EQ caller, storage))
-
-    if opcode(line) != 'IF':
-        return None
-
-    condition, if_true, if_false = line[1:]
+def get_caller_cond(condition):
 
     if opcode(condition) != 'EQ':
         if opcode(condition) != 'ISZERO':
             return None
         else:
             condition = condition[1]
-            if_true, if_false = if_false, if_true
 
     if opcode(condition) != 'EQ':
         return None
@@ -70,10 +72,20 @@ def find_caller_req(line, _):
         return None
 
 
-''' finding a list of admins '''
-print(f'\n{C.blue} # admins{C.end}')
+def find_caller_req(line, _):
+    # finds IFs: (IF (EQ caller, storage))
 
-admin_rights = defaultdict(set)
+    if opcode(line) != 'IF':
+        return None
+
+    condition, if_true, if_false = line[1:]
+
+    return get_caller_cond(condition)
+
+
+
+''' finding a list of admins '''
+
 open_access = set(f['hash'] for f in functions.values())
 
 for f in functions.values():
@@ -85,7 +97,7 @@ for f in functions.values():
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
-            admin_rights[r].add(f['hash'])
+            roles[r]['funcs'].add(f['hash'])
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
 
@@ -97,22 +109,6 @@ for f in functions.values():
         # read_only function
         if f['hash'] in open_access:
             open_access.remove(f['hash'])
-
-for admin, funcs in admin_rights.items():
-    print(C.green, pretty(admin), C.end)
-    for f_hash in funcs:
-        func = functions[f_hash]
-
-        print('- ', func['color_name'])
-    print()
-
-print(C.green, 'anyone', C.end)
-for f_hash in open_access:
-    func = functions[f_hash]
-#    if func['']
-    print('- ', func['color_name'])
-
-print()
 
 
 ''' find who can change a given storage '''
@@ -129,17 +125,65 @@ def find_stor_req(line, knows_true):
         # we're dealing only with storages that are not arrays
         return None
 
-    return (size, offset, stor_num), knows_true
+    callers = []
+    for cond in knows_true:
+        caller = get_caller_cond(cond)
+        if caller is not None:
+            callers.append(caller)
+
+    return ('STORAGE', size, offset, stor_num), callers
 
 for f in functions.values():
     trace = f['trace']
 
     res = walk_trace(trace, find_stor_req)
     if len(res) > 0:
+#        print()
+#        print(f['color_name'])
+        for (stor, callers) in res:
+#            print('changes', pretty(('STORAGE',)+stor))
+#            print(', '.join(pretty(c) for c in callers))
+            if stor in roles:
+                if callers is not None:
+                    setter = (callers, f['name'])
+                else:
+                    setter = ('anyone', f['name'])
+
+                if setter not in roles[stor]['setters']:
+                    roles[stor]['setters'].append(setter)
+
+print(f'\n{C.blue} # contract roles{C.end}')
+for stor in roles:
+    print(C.blue, pretty(stor), C.end)
+
+    if len(roles[stor]['setters']) > 0:
+        print('  can be changed by:')
+        for callers, f_name in roles[stor]['setters']:
+            print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
+    else:
+        print('  constant')
+
+    role = roles[stor]
+    if len(role['funcs']) > 0:
         print()
-        print(f['color_name'])
-        for (stor, requirements) in res:
-            print('changes', pretty(('STORAGE',)+stor))
+        print('  can call those functions:')
+
+        for f_hash in role['funcs']:
+            func = functions[f_hash]
+
+            print('   ', func['color_name'])
+        print()
+
+    print()
+'''
+print(C.green, 'anyone', C.end)
+for f_hash in open_access:
+    func = functions[f_hash]
+#    if func['']
+    print('- ', func['color_name'])
+
+print()
+'''
 
 
 '''
