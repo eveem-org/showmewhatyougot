@@ -233,7 +233,11 @@ print(f'\n{C.blue} # contract roles{C.end}')
 print()
 
 for stor in roles:
-    print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['role_address'], C.end)
+
+    if len(roles[stor]['role_address']) > 0:
+        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['role_address'], C.end)
+    else:
+        print(C.blue, pretty(stor),C.end)
 
     if len(roles[stor]['setters']) > 0:
         print('  can be changed by:')
