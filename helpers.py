@@ -11,13 +11,16 @@ def opcode(exp):
         return None
 
 
+def prettify(stor_defs, exp):
+    if opcode(exp) == 'STORAGE' and exp in stor_defs:
+        return stor_defs[exp]
+    else:
+        return exp
+
+
 def deep_tuple(exp):
     if type(exp) != list:
         return exp
-
-#    if opcode(exp) == 'MASK_SHL' and opcode(exp[4]) == 'STORAGE' and exp[1:3] == exp[4][1:3]:
-#        return deep_tuple(exp[4])
-
 
     # converts (mask_shl, size, 0, 0, (storage, size, offset, val)) ->
     #               -> (storage, size, offset, val)  

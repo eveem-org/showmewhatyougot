@@ -44,7 +44,7 @@ def load_contract(address):
         print('    ',f['color_name'])
 
         if f['getter']:
-            stor_defs[f['name']] = f['getter']
+            stor_defs[f['getter']] = f['name']
 
     print()
     print(C.blue, '# storage definitions', C.end)

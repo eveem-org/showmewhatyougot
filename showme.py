@@ -1,7 +1,10 @@
 import sys
 
-from helpers import opcode, C
+from helpers import opcode, C, prettify
 from contract import load_contract
+
+from functools import partial
+
 
 if len(sys.argv) > 1:
     address = sys.argv[1]
@@ -19,6 +22,9 @@ else:
 
 
 functions, stor_defs = load_contract(address)
+pretty = partial(prettify, stor_defs)
+
+print(pretty('test'))
 
 
 def walk_trace(trace, f=print):
@@ -53,6 +59,13 @@ def find_caller_req(line):
     condition, if_true, if_false = line[1:]
 
     if opcode(condition) != 'EQ':
+        if opcode(condition) != 'ISZERO':
+            return None
+        else:
+            condition = condition[1]
+            if_true, if_false = if_false, if_true
+
+    if opcode(condition) != 'EQ':
         return None
 
     if condition[1] == ('MASK_SHL', 160, 0, 0, 'CALLER'):
@@ -62,7 +75,11 @@ def find_caller_req(line):
     else:
         return None
 
-    return stor
+    if opcode(stor) == 'STORAGE' and len(stor) == 4:
+        # len(stor) == 5 -> indexed storage array, not handling those now
+        return stor
+    else:
+        return None
 
 
 
@@ -75,8 +92,12 @@ for f in functions.values():
     res = walk_trace(trace, find_caller_req)
     if len(res) > 0:
         print(f['color_name'])
+        f['admins'] = set()
         for r in res:
-            print(r)
+            f['admins'].add(r)
+#            print(r)
+
+        print(f['admins'])
 
 
 
