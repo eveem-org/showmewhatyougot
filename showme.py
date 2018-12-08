@@ -42,7 +42,27 @@ for s, name in stor_defs.items():
             'definition': s,
             'setters': list(),
             'funcs': set(),
+            'withdrawals': set(),
+            'calls': set(),
         }
+
+roles['anyone'] = {
+    'name': '_anyone',
+    'definition': None,
+    'setters': list(),
+    'funcs': set(),
+    'withdrawals': set(),
+    'calls': set(),
+}
+
+roles['unknown'] = {
+    'name': '_unknown',
+    'definition': None,
+    'setters': list(),
+    'funcs': set(),
+    'withdrawals': set(),
+    'calls': set(),
+}
 
 def find_opcodes(line, _):
     return opcode(line)
@@ -143,6 +163,9 @@ for f in functions.values():
 
             affected_roles = set()
             for r in roles:
+                if opcode(r) != 'STORAGE':
+                    continue
+
                 stor_offset, stor_size, stor_num = stor[2], stor[1], stor[3]
                 role_offset, role_size, role_num = r[2], r[1], r[3]
 
@@ -166,8 +189,22 @@ for f in functions.values():
 
 '''
 
-#def find_calls(line, _):
-#    if opcode(line) == 'CALL':
+print()
+print()
+
+def find_calls(line, _):
+    if opcode(line) != 'CALL':
+        return None
+
+    _, addr, wei, _, _, _, _, f_name, f_params = line[1:]
+
+    if addr == ('MASK_SHL', 160, 0, 0, 'CALLER'):
+        # WARN: should check for knows_true, perhaps a caller can only be someone specific
+        addr = 'anyone'
+    elif opcode(addr) != 'STORAGE' or len(addr) > 4:
+        addr = 'unknown'
+
+    return (addr, wei, f_name, f_params)
 
 
 for f in functions.values():
@@ -175,7 +212,12 @@ for f in functions.values():
 
     res = walk_trace(trace, find_calls)
 
-
+    for addr, wei, f_name, f_params in res:
+        if wei != 0:
+            # withdrawal
+            roles[addr]['withdrawals'].add(f['name'])
+        else:
+            roles[addr]['calls'].add(f['name'])
 
 '''
 
@@ -193,7 +235,8 @@ for stor in roles:
         for callers, f_name in roles[stor]['setters']:
             print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
     else:
-        print('  constant')
+        if opcode(stor) == 'STORAGE':
+            print('  constant')
 
     role = roles[stor]
     if len(role['funcs']) > 0:
@@ -207,6 +250,7 @@ for stor in roles:
         print()
 
     print()
+
 '''
 print(C.green, 'anyone', C.end)
 for f_hash in open_access:
