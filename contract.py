@@ -33,8 +33,6 @@ def load_contract(address, name=None):
                 f.write(json.dumps(contract, indent=2))
 
 
-    print()
-    print(C.blue,'# functions',C.end)
 
     functions = {}
     stor_defs = {}
@@ -42,7 +40,7 @@ def load_contract(address, name=None):
     for f in contract['functions']:
         if f is None:
             continue
-            
+
         for k, v in f.items():
             # converting all the traces, and so on into tuples from lists
             # tuples are read-only, which we want, and also can work as indexes easier
@@ -50,8 +48,6 @@ def load_contract(address, name=None):
             f[k] = deep_tuple(v)
 
         functions[f['hash']] = f
-
-        print('    ',f['color_name'])
 
         if f['getter']:
             stor_defs[f['getter']] = f['name'].split('(')[0]

@@ -17,6 +17,10 @@ if len(sys.argv) > 1:
         'default': '0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861',
         'digix': '0xe0b7927c4af23765cb51314a0e0521a9645f0e2a',
         'aragon': '0x960b236a07cf122663c4303350609a66a7b288c0',
+        'medianizer': '0x729d19f657bd0614b4985cf1d82531c67569197b',
+        'arbitrager': '0xc2a694c5ced27e3d3a5a8bd515a42f2b89665003',
+        'nocode': '0x1f772db718238d8413bad9b309950a9c5286fd71',
+        'destruct': '0xB02bD126cd5477b2C166f8A31fAb75DB0c074371',
     }
 
     if param in addr_list:
@@ -60,6 +64,8 @@ def add_role(name=None, value=None, definition=None):
         'withdrawals': set(),
         'calls': set(),
         'value': value,
+        'destructs': set(),
+        'destructs_init': set(),
     }
 
 for s, name in stor_defs.items():
@@ -152,6 +158,8 @@ for f in functions.values():
             if r not in roles:
                 add_role(definition=r)
             roles[r]['funcs'].add(f['hash'])
+#            if r in roles.keys():
+#                roles[r]['funcs'].add(f['hash'])
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
 
@@ -259,6 +267,58 @@ for f in functions.values():
         else:
             roles[addr]['calls'].add(f['hash'])
 
+
+'''
+
+    find self-destructs
+
+'''
+
+print()
+print()
+
+def find_destructs(line, knows_true):
+    # todo: delegatecalls
+    # todo: selfdestructs
+    if opcode(line) != 'SELFDESTRUCT':
+        return None
+
+    receiver = line[1]
+
+    if receiver == ('MASK_SHL', 160, 0, 0, 'CALLER'):
+        # WARN: should check for knows_true, perhaps a caller can only be someone specific
+        receiver = 'anyone'
+    elif opcode(receiver) != 'STORAGE' or len(receiver) > 4:
+        receiver = 'unknown'
+
+    callers = []
+    for cond in knows_true:
+        caller = get_caller_cond(cond)
+        if caller is not None:
+            callers.append(caller)
+
+    if len(callers) == 0:
+        callers = ['anyone']
+
+    return receiver, callers
+
+
+for f in functions.values():
+    trace = f['trace']
+
+    res = walk_trace(trace, find_destructs)
+
+    for receiver, callers in res:
+        if receiver not in roles:
+            add_role(definition=addr)
+
+        roles[receiver]['destructs'].add(f['hash'])
+
+        for caller in callers:
+            roles[caller]['destructs_init'].add(f['hash'])
+
+
+
 '''
 
     display
@@ -312,6 +372,26 @@ for stor in roles:
         print('  can be called by:')
 
         for f_hash in role['calls']:
+            func = functions[f_hash]
+
+            print('   ', func['color_name'])
+
+        print()
+
+    if len(role['destructs']) > 0:
+        print('  can receive selfdestruct:')
+
+        for f_hash in role['destructs']:
+            func = functions[f_hash]
+
+            print('   ', func['color_name'])
+
+        print()
+
+    if len(role['destructs_init']) > 0:
+        print('  can initiate selfdestruct:')
+
+        for f_hash in role['destructs_init']:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
