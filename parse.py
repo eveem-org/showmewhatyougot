@@ -4,9 +4,12 @@ import json
 
 import os
 
-from helpers import opcode, deep_tuple
+from helpers import opcode, deep_tuple, C
 
 address = "0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861"
+print(f'{C.blue}contract{C.end} {address}')
+
+
 url = f"http://eveem.org/code/{address}.json"
 cache_fname = f'cache/{address}.json'
 
@@ -29,6 +32,9 @@ functions = {}
 
 stor_defs = {}
 
+print()
+print(C.blue,'functions',C.end)
+
 for f in contract['functions']:
     for k, v in f.items():
         # converting all the traces, and so on into tuples from lists
@@ -42,6 +48,9 @@ for f in contract['functions']:
 
     if f['getter']:
         stor_defs[f['name']] = f['getter']
+
+print()
+print(C.blue, 'storage definitions', C.end)
 
 
 for k,v in stor_defs.items():
