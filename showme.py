@@ -10,8 +10,13 @@ from helpers import opcode, deep_tuple, C
 if len(sys.argv)>1:
     address = sys.argv[1]
 
-    if address == 'kitties':
-        address = '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d'
+    addr_list = {
+        'kitties': '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d',
+        'default': '0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861',
+    }
+
+    if address in addr_list:
+        address = addr_list[address]
 else:
     print("\n\n\tusage `python showme.py {address}`\n\n")
     exit()
