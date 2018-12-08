@@ -4,6 +4,7 @@ from helpers import opcode, C, prettify
 from contract import load_contract
 
 from functools import partial
+from collections import defaultdict
 
 
 if len(sys.argv) > 1:
@@ -85,20 +86,28 @@ def find_caller_req(line):
 
 print(f'\n{C.blue} # admins{C.end}')
 
+admin_rights = defaultdict(list)
+
 for f in functions.values():
     trace = f['trace']
     assert type(trace) == tuple
 
     res = walk_trace(trace, find_caller_req)
     if len(res) > 0:
-        print(f['color_name'])
+#        print(f['color_name'])
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
+            admin_rights[r].append(f)
 #            print(r)
 
-        print(f['admins'])
+#        for a in f['admins']:
+#            print('-',pretty(a))
 
-
+for admin, func in admin_rights.items():
+    print(C.green, pretty(admin), C.end)
+    for f in func:
+        print('- ', f['color_name'])
+    print()
 
 print()
