@@ -7,7 +7,7 @@ from storage import read_address
 from functools import partial
 from collections import defaultdict
 
-from trace import walk_trace
+from trace import walk_trace, walk_exp
 
 if len(sys.argv) > 1:
     param = sys.argv[1]
@@ -37,8 +37,7 @@ roles = {}
 functions, stor_defs = load_contract(address, contract_name)
 pretty = partial(prettify, roles)
 
-
-def add_role(name=None, address=None, definition=None):
+def add_role(name=None, value=None, definition=None):
     global roles
 
     if name is None:
@@ -50,6 +49,9 @@ def add_role(name=None, address=None, definition=None):
 
     s = definition or name
 
+    if s in roles:
+        return
+
     roles[s] = {
         'name':name,
         'definition': definition,
@@ -57,7 +59,7 @@ def add_role(name=None, address=None, definition=None):
         'funcs': set(),
         'withdrawals': set(),
         'calls': set(),
-        'address': address,
+        'value': value,
     }
 
 for s, name in stor_defs.items():
@@ -65,7 +67,32 @@ for s, name in stor_defs.items():
         role_address = read_address(address, s[3])
         add_role(name, role_address, s)
 
-add_role('_anyone')
+
+'''
+
+    find storages without getters
+
+'''
+def find_storages(exp):
+    if opcode(exp) == 'STORAGE':
+        return exp
+
+    if opcode(exp) == 'STORE':
+        return ('STORAGE', )+exp[1:4]
+
+
+
+for f in functions.values():
+    trace = f['trace']
+    storages = walk_exp(trace, find_storages)
+    for s in storages:
+        if s not in roles and len(s) == 4 and s[:3] == ('STORAGE', 160, 0):
+            add_role(s)
+
+'''
+    other roles
+'''
+
 add_role('unknown')
 
 
@@ -242,8 +269,13 @@ print()
 
 for stor in roles:
 
-    if roles[stor]['address']:
-        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['address'], C.end)
+    role = roles[stor]
+
+    if len(role['funcs']) == 0 and len(role['withdrawals']) == 0 and len(role['calls']) == 0:
+        continue
+
+    if roles[stor]['value']:
+        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['value'], C.end)
     else:
         print(C.blue, pretty(stor),C.end)
 
@@ -258,7 +290,6 @@ for stor in roles:
             print('  constant')
             print()
 
-    role = roles[stor]
     if len(role['funcs']) > 0:
         print('  can call those functions:')
 
@@ -290,43 +321,4 @@ for stor in roles:
 
 
     print()
-
-'''
-print(C.green, 'anyone', C.end)
-for f_hash in open_access:
-    func = functions[f_hash]
-#    if func['']
-    print('- ', func['color_name'])
-
-print()
-'''
-
-
-'''
-
-
-def find_returns(line, _):
-    if opcode(line) == 'RETURN':
-        return line
-    else:
-        return None
-
-    res = walk_trace(trace, find_returns)
-    if len(res) > 0:
-        print()
-        print(f['color_name'])
-        for ret in res:
-            print('returns', ret)
-
-    continue
-
-
-'''
-
-
-
-
-
-
-
 

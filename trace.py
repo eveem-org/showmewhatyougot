@@ -34,3 +34,19 @@ def walk_trace(trace, f=print, knows_true=None):
             res.extend(walk_trace(trace, f, knows_true))
 
     return res
+
+
+def walk_exp(exp, f=print):
+    '''
+        walks the expression - a more generic version of walk_trace.
+        useful for finding expressions of a given type (like 'all storages in the trace')
+    '''
+
+    found = f(exp)
+    res = [found] if found is not None else []
+
+    if type(exp) == tuple:
+        for e in exp:
+            res.extend(walk_exp(e, f))
+
+    return res
