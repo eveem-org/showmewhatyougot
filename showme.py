@@ -17,34 +17,67 @@ else:
     print("\n\n\tusage `python showme.py {address}`\n\n")
     exit()
 
-print()
-print(f'{C.blue} contract{C.end} {address}')
 
 functions, stor_defs = load_contract(address)
 
 
-def walk_trace(trace):
+def walk_trace(trace, f=print):
+
+    res = []
+
     for line in trace:
+        found = f(line)
+        if found is not None:
+            res.append(found)
+
         if opcode(line) == 'IF':
             condition, if_true, if_false = line[1:]
-            walk_trace(if_true)
-            walk_trace(if_false)
+            res.extend(walk_trace(if_true, f))
+            res.extend(walk_trace(if_false, f))
             continue
 
         if opcode(line) == 'WHILE':
             condition, trace = line[1:]
-            walk_trace(trace)
+            res.extend(walk_trace(trace, f))
             continue
 
-        
+    return res
+
+
+def find_caller_req(line):
+    # finds IFs: (IF (EQ caller, storage))
+
+    if opcode(line) != 'IF':
+        return None
+
+    condition, if_true, if_false = line[1:]
+
+    if opcode(condition) != 'EQ':
+        return None
+
+    if condition[1] == ('MASK_SHL', 160, 0, 0, 'CALLER'):
+        stor = condition[2]
+    elif condition[2] == ('MASK_SHL', 160, 0, 0, 'CALLER'):
+        stor = condition[1]
+    else:
+        return None
+
+    return stor
 
 
 
+print(f'\n{C.blue} # admins{C.end}')
 
 for f in functions.values():
     trace = f['trace']
     assert type(trace) == tuple
 
-    walk_trace(trace)
+    res = walk_trace(trace, find_caller_req)
+    if len(res) > 0:
+        print(f['color_name'])
+        for r in res:
+            print(r)
+
+
 
 print()

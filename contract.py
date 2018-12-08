@@ -7,6 +7,9 @@ import os
 from helpers import opcode, deep_tuple, C
 
 def load_contract(address):
+    print()
+    print(f'{C.blue} # contract{C.end} {address}')
+
     url = f"http://eveem.org/code/{address}.json"
     cache_fname = f'cache/{address}.json'
 
@@ -14,7 +17,7 @@ def load_contract(address):
         with open(cache_fname) as f:
             contract = json.loads(f.read())
     else:
-        print(f'fetching {url}...')
+        print(f'# fetching {url}...')
         with urllib.request.urlopen(url) as response:
             re = response.read()
             contract = json.loads(re)
@@ -24,7 +27,7 @@ def load_contract(address):
 
 
     print()
-    print(C.blue,'functions',C.end)
+    print(C.blue,'# functions',C.end)
 
     functions = {}
     stor_defs = {}
@@ -44,7 +47,7 @@ def load_contract(address):
             stor_defs[f['name']] = f['getter']
 
     print()
-    print(C.blue, 'storage definitions', C.end)
+    print(C.blue, '# storage definitions', C.end)
 
     for k,v in stor_defs.items():
         print('    ', k, v)
