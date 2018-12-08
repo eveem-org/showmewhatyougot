@@ -6,9 +6,13 @@ import os
 
 from helpers import opcode, deep_tuple, C
 
-def load_contract(address):
+def load_contract(address, name=None):
     print()
-    print(f'{C.blue} # contract{C.end} {address}')
+    if name:
+        print(f'{C.blue} # contract{C.end} {C.header}{name} -- {address}{C.end}')
+    else:
+        print(f'{C.blue} # contract{C.end} {C.header}{address}{C.end}')
+
 
     url = f"http://eveem.org/code/{address}.json"
     cache_fname = f'cache/{address}.json'

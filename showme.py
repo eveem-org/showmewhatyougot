@@ -8,21 +8,26 @@ from collections import defaultdict
 
 
 if len(sys.argv) > 1:
-    address = sys.argv[1]
+    param = sys.argv[1]
 
     addr_list = {
         'kitties': '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d',
         'default': '0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861',
     }
 
-    if address in addr_list:
-        address = addr_list[address]
+    if param in addr_list:
+        contract_name = param
+        address = addr_list[param]
+    else:
+        address = param
+        contract_name = None
+
 else:
     print("\n\n\tusage `python showme.py {address}`\n\n")
     exit()
 
 
-functions, stor_defs = load_contract(address)
+functions, stor_defs = load_contract(address, contract_name)
 pretty = partial(prettify, stor_defs)
 
 print(pretty('test'))
