@@ -166,8 +166,11 @@ for f in functions.values():
     if len(res) > 0:
         for (stor, callers) in res:
 
+            print(stor)
+
             affected_roles = set()
             for r in roles:
+
                 if opcode(r) != 'STORAGE':
                     continue
 
@@ -244,7 +247,7 @@ for stor in roles:
     if len(roles[stor]['setters']) > 0:
         print('  can be changed by:')
         for callers, f_name in roles[stor]['setters']:
-            print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
+            print('  ', C.green, (', '.join((roles[c]['name']+' '+C.end+C.underline+roles[c]['role_address']+C.end) for c in callers)), C.end, 'in', f_name)
         print()
     else:
         if opcode(stor) == 'STORAGE':
