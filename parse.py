@@ -3,10 +3,19 @@ import urllib.request
 import json
 
 import os
+import sys
 
 from helpers import opcode, deep_tuple, C
 
-address = "0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861"
+if len(sys.argv)>1:
+    address = sys.argv[1]
+
+    if address == 'kitties':
+        address = '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d'
+else:
+    print("\tusage python parse.py {address}")
+
+#address = "0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861"
 print()
 print(f'{C.blue} contract{C.end} {address}')
 
@@ -14,19 +23,18 @@ print(f'{C.blue} contract{C.end} {address}')
 url = f"http://eveem.org/code/{address}.json"
 cache_fname = f'cache/{address}.json'
 
-print(url)
 print()
 
 if os.path.isfile(cache_fname):
     with open(cache_fname) as f:
         contract = json.loads(f.read())
 else:
-
+    print(f'fetching {url}...')
     with urllib.request.urlopen(url) as response:
         re = response.read()
         contract = json.loads(re)
 
-        with open(fname, 'w') as f:
+        with open(cache_fname, 'w') as f:
             f.write(json.dumps(contract, indent=2))
 
 functions = {}
@@ -56,3 +64,5 @@ print(C.blue, 'storage definitions', C.end)
 
 for k,v in stor_defs.items():
     print(k, v)
+
+print()
