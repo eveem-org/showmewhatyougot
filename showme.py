@@ -2,6 +2,7 @@ import sys
 
 from helpers import opcode, C, prettify
 from contract import load_contract
+from storage import read_address
 
 from functools import partial
 from collections import defaultdict
@@ -37,6 +38,7 @@ roles = {}
 
 for s, name in stor_defs.items():
     if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
+        role_address = read_address(address, s[3])
         roles[s] = {
             'name': name,
             'definition': s,
@@ -44,6 +46,7 @@ for s, name in stor_defs.items():
             'funcs': set(),
             'withdrawals': set(),
             'calls': set(),
+            'role_address': role_address
         }
 
 roles['anyone'] = {
@@ -53,6 +56,7 @@ roles['anyone'] = {
     'funcs': set(),
     'withdrawals': set(),
     'calls': set(),
+    'role_address': '',
 }
 
 roles['unknown'] = {
@@ -62,6 +66,7 @@ roles['unknown'] = {
     'funcs': set(),
     'withdrawals': set(),
     'calls': set(),
+    'role_address': '',
 }
 
 def find_opcodes(line, _):
@@ -230,7 +235,11 @@ print(f'\n{C.blue} # contract roles{C.end}')
 print()
 
 for stor in roles:
-    print(C.blue, pretty(stor), C.end)
+
+    if len(roles[stor]['role_address']) > 0:
+        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['role_address'], C.end)
+    else:
+        print(C.blue, pretty(stor),C.end)
 
     if len(roles[stor]['setters']) > 0:
         print('  can be changed by:')
