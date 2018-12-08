@@ -113,8 +113,6 @@ for f in functions.values():
 
 ''' find who can change a given storage '''
 
-
-
 def find_stor_req(line, knows_true):
     if opcode(line) != 'STORE':
         return None
@@ -151,13 +149,42 @@ for f in functions.values():
                 if stor_offset >= role_offset and stor_offset < role_offset + role_size and stor_num == role_num:
                     affected_roles.add(r)
 
+            # ^ we can't compare roles to storage writes, because that would miss all the partial writes
+            # to a given storage. see 'digix' contract, and how setOwner is set there
+
             setter = (callers, f['name'])
 
             for role_id in affected_roles:
                 if setter not in roles[role_id]['setters']:
                     roles[role_id]['setters'].append(setter)
 
+
+'''
+
+    browse all the contract calls, and figure out who gets withdrawals, and what contracts
+    can get called
+
+'''
+
+#def find_calls(line, _):
+#    if opcode(line) == 'CALL':
+
+
+for f in functions.values():
+    trace = f['trace']
+
+    res = walk_trace(trace, find_calls)
+
+
+
+'''
+
+    display
+
+'''
 print(f'\n{C.blue} # contract roles{C.end}')
+print()
+
 for stor in roles:
     print(C.blue, pretty(stor), C.end)
 
