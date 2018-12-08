@@ -131,6 +131,9 @@ def find_stor_req(line, knows_true):
         if caller is not None:
             callers.append(caller)
 
+    if len(callers) == 0:
+        callers = ['anyone']
+
     return ('STORAGE', size, offset, stor_num), callers
 
 for f in functions.values():
@@ -138,19 +141,21 @@ for f in functions.values():
 
     res = walk_trace(trace, find_stor_req)
     if len(res) > 0:
-#        print()
-#        print(f['color_name'])
         for (stor, callers) in res:
-#            print('changes', pretty(('STORAGE',)+stor))
-#            print(', '.join(pretty(c) for c in callers))
-            if stor in roles:
-                if callers is not None:
-                    setter = (callers, f['name'])
-                else:
-                    setter = ('anyone', f['name'])
 
-                if setter not in roles[stor]['setters']:
-                    roles[stor]['setters'].append(setter)
+            affected_roles = set()
+            for r in roles:
+                stor_offset, stor_size, stor_num = stor[2], stor[1], stor[3]
+                role_offset, role_size, role_num = r[2], r[1], r[3]
+
+                if stor_offset >= role_offset and stor_offset < role_offset + role_size and stor_num == role_num:
+                    affected_roles.add(r)
+
+            setter = (callers, f['name'])
+
+            for role_id in affected_roles:
+                if setter not in roles[role_id]['setters']:
+                    roles[role_id]['setters'].append(setter)
 
 print(f'\n{C.blue} # contract roles{C.end}')
 for stor in roles:
