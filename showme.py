@@ -2,6 +2,7 @@ import sys
 
 from helpers import opcode, C, prettify
 from contract import load_contract
+from storage import read_address
 
 from functools import partial
 from collections import defaultdict
