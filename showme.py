@@ -50,6 +50,8 @@ def walk_trace(trace, f=print):
 
     return res
 
+def find_opcodes(line):
+    return opcode(line)
 
 def find_caller_req(line):
     # finds IFs: (IF (EQ caller, storage))
@@ -86,7 +88,8 @@ def find_caller_req(line):
 
 print(f'\n{C.blue} # admins{C.end}')
 
-admin_rights = defaultdict(list)
+admin_rights = defaultdict(set)
+open_access = set(f['hash'] for f in functions.values())
 
 for f in functions.values():
     trace = f['trace']
@@ -98,16 +101,32 @@ for f in functions.values():
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
-            admin_rights[r].append(f)
-#            print(r)
+            admin_rights[r].add(f['hash'])
+            if f['hash'] in open_access:
+                open_access.remove(f['hash'])
 
-#        for a in f['admins']:
-#            print('-',pretty(a))
+    opcodes = walk_trace(trace, opcode)
+    side_effects = ['CALL', 'DELEGATECALL', 'CODECALL', 'SELFDESTRUCT', 'STORE']
 
-for admin, func in admin_rights.items():
+    if all(s not in opcodes for s in side_effects):
+        # read_only function
+        if f['hash'] in open_access:
+            open_access.remove(f['hash'])
+
+
+
+for admin, funcs in admin_rights.items():
     print(C.green, pretty(admin), C.end)
-    for f in func:
-        print('- ', f['color_name'])
+    for f_hash in funcs:
+        func = functions[f_hash]
+
+        print('- ', func['color_name'])
     print()
+
+print(C.green, 'anyone', C.end)
+for f_hash in open_access:
+    func = functions[f_hash]
+#    if func['']
+    print('- ', func['color_name'])
 
 print()
