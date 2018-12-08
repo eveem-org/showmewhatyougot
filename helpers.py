@@ -29,7 +29,7 @@ def deep_tuple(exp):
         return tuple()
 
     if exp[0] == 'MASK_SHL' and (exp[2], exp[3]) == (0, 0) and opcode(exp[4]) == 'STORAGE' and\
-        exp[1] == exp[4][1]:
+        exp[1] == exp[4][1] and exp[4][2] == 0:
             return deep_tuple(exp[4])
 
     return tuple(deep_tuple(e) for e in exp)

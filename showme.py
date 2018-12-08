@@ -118,6 +118,7 @@ print()
 ''' find who can change a given storage '''
 
 
+
 def find_stor_req(line, knows_true):
     if opcode(line) != 'STORE':
         return None
@@ -132,6 +133,7 @@ def find_stor_req(line, knows_true):
 
 for f in functions.values():
     trace = f['trace']
+
     res = walk_trace(trace, find_stor_req)
     if len(res) > 0:
         print()
@@ -140,8 +142,26 @@ for f in functions.values():
             print('changes', pretty(('STORAGE',)+stor))
 
 
+'''
 
 
+def find_returns(line, _):
+    if opcode(line) == 'RETURN':
+        return line
+    else:
+        return None
+
+    res = walk_trace(trace, find_returns)
+    if len(res) > 0:
+        print()
+        print(f['color_name'])
+        for ret in res:
+            print('returns', ret)
+
+    continue
+
+
+'''
 
 
 
