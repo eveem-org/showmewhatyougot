@@ -193,6 +193,8 @@ print()
 print()
 
 def find_calls(line, _):
+    # todo: delegatecalls
+    # todo: selfdestructs
     if opcode(line) != 'CALL':
         return None
 
