@@ -6,7 +6,7 @@ from contract import load_contract
 from functools import partial
 from collections import defaultdict
 
-from solver.arithmetic import is_zero
+from trace import walk_trace
 
 if len(sys.argv) > 1:
     param = sys.argv[1]
@@ -34,36 +34,11 @@ functions, stor_defs = load_contract(address, contract_name)
 pretty = partial(prettify, stor_defs)
 
 
-def walk_trace(trace, f=print):
-
-    res = []
-
-    for line in trace:
-        found = f(line)
-        if found is not None:
-            res.append(found)
-
-        if opcode(line) == 'IF':
-            condition, if_true, if_false = line[1:]
-            res.extend(walk_trace(if_true, f))
-            res.extend(walk_trace(if_false, f))
-            continue
-
-        if opcode(line) == 'WHILE':
-            condition, trace = line[1:]
-            res.extend(walk_trace(trace, f))
-            continue
-
-        if opcode(line) == 'LOOP':
-            trace, label = line[1:]
-            res.extend(walk_trace(trace, f))
-
-    return res
-
-def find_opcodes(line):
+def find_opcodes(line, _):
     return opcode(line)
 
-def find_caller_req(line):
+
+def find_caller_req(line, _):
     # finds IFs: (IF (EQ caller, storage))
 
     if opcode(line) != 'IF':
@@ -95,7 +70,7 @@ def find_caller_req(line):
         return None
 
 
-
+''' finding a list of admins '''
 print(f'\n{C.blue} # admins{C.end}')
 
 admin_rights = defaultdict(set)
@@ -107,7 +82,6 @@ for f in functions.values():
 
     res = walk_trace(trace, find_caller_req)
     if len(res) > 0:
-#        print(f['color_name'])
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
@@ -115,8 +89,9 @@ for f in functions.values():
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
 
-    opcodes = walk_trace(trace, opcode)
+    opcodes = walk_trace(trace, find_opcodes)
     side_effects = ['CALL', 'DELEGATECALL', 'CODECALL', 'SELFDESTRUCT', 'STORE']
+    # WARN: ^ the above may not be a complete list
 
     if all(s not in opcodes for s in side_effects):
         # read_only function
@@ -138,3 +113,6 @@ for f_hash in open_access:
     print('- ', func['color_name'])
 
 print()
+
+''' find who can change a given storage '''
+
