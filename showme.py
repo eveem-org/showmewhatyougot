@@ -6,6 +6,7 @@ from contract import load_contract
 from functools import partial
 from collections import defaultdict
 
+from solver.arithmetic import is_zero
 
 if len(sys.argv) > 1:
     param = sys.argv[1]
@@ -14,7 +15,7 @@ if len(sys.argv) > 1:
         'kitties': '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d',
         'default': '0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861',
         'digix': '0xe0b7927c4af23765cb51314a0e0521a9645f0e2a',
-        
+
     }
 
     if param in addr_list:
