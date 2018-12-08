@@ -546,7 +546,6 @@ opcodes.update({
 assert eval_bool(eval_bool(('OR', 0, eval_bool(('LT', 480, 18446744073709551615))))) == True
 
 assert hex(eval(('NOT',2))) == '0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd'
-print(eval(('ADD',10,('NOT',1))))
 assert eval(('ADD',10,('NOT',1))) == 8
 
 assert eval(('ADD',2,('MUL',2,10))) == 22
@@ -560,13 +559,3 @@ assert eval(('OR', 256, 256)) == 256
 assert True == eval_bool(('ISZERO', ('LT', ('ADD', 384, ('MUL', 1, ('MASK_SHL', 256, 0, 0, ('ADD', 128, ('MUL', 1, 
                     ('MASK_SHL', 251, 0, 5, ('cd', ('ADD', 4, ('MUL', 1, ('cd', 4)))))))))), 
                     ('MASK_SHL', 256, 0, 0, ('ADD', 128, ('MUL', 1, ('MASK_SHL', 251, 0, 5, ('cd', ('ADD', 4, ('MUL', 1, ('cd', 4))))))))))) 
-'''print('@')
-print(sub_op( 
-
-    ['ADD', 384, ['MUL', 1, 
-
-    ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 4]]]]]]]]]],
-    ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 5]]]]]]]]))'''
-
-#assert True == eval_bool(['ISZERO', ['LT', ['ADD', 384, ['MUL', 1, ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 4]]]]]]]]]], ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 5]]]]]]]]]])
-#assert False == eval_bool(['LT', ['ADD', 384, ['MUL', 1, ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 4]]]]]]]]]], ['MASK_SHL', 256, 0, 0, ['ADD', 128, ['MUL', 1, ['MASK_SHL', 251, 0, 5, ['cd', ['ADD', 4, ['MUL', 1, ['cd', 4]]]]]]]]])

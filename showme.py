@@ -122,6 +122,8 @@ for f in functions.values():
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
+            if r not in roles:
+                add_role(definition=r)
             roles[r]['funcs'].add(f['hash'])
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
@@ -248,7 +250,8 @@ for stor in roles:
     if roles[stor]['setters']:
         print('  can be changed by:')
         for callers, f_name in roles[stor]['setters']:
-            print('  ', C.green, (', '.join((roles[c]['name']+' '+C.end+C.underline+roles[c]['address']+C.end) for c in callers)), C.end, 'in', f_name)
+#            roles[c]['name']+' '+C.end+C.underline+roles[c]['address']+C.end
+            print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
         print()
     else:
         if opcode(stor) == 'STORAGE':
