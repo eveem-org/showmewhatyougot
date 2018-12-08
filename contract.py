@@ -17,6 +17,9 @@ def load_contract(address, name=None):
     url = f"http://eveem.org/code/{address}.json"
     cache_fname = f'cache/{address}.json'
 
+    if not os.path.isdir('cache'):
+        os.mkdir('cache')
+
     if os.path.isfile(cache_fname):
         with open(cache_fname) as f:
             contract = json.loads(f.read())
