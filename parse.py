@@ -7,7 +7,8 @@ import os
 from helpers import opcode, deep_tuple, C
 
 address = "0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861"
-print(f'{C.blue}contract{C.end} {address}')
+print()
+print(f'{C.blue} contract{C.end} {address}')
 
 
 url = f"http://eveem.org/code/{address}.json"
