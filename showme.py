@@ -215,9 +215,9 @@ for f in functions.values():
     for addr, wei, f_name, f_params in res:
         if wei != 0:
             # withdrawal
-            roles[addr]['withdrawals'].add(f['name'])
+            roles[addr]['withdrawals'].add(f['hash'])
         else:
-            roles[addr]['calls'].add(f['name'])
+            roles[addr]['calls'].add(f['hash'])
 
 '''
 
@@ -234,13 +234,14 @@ for stor in roles:
         print('  can be changed by:')
         for callers, f_name in roles[stor]['setters']:
             print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
+        print()
     else:
         if opcode(stor) == 'STORAGE':
             print('  constant')
+            print()
 
     role = roles[stor]
     if len(role['funcs']) > 0:
-        print()
         print('  can call those functions:')
 
         for f_hash in role['funcs']:
@@ -248,6 +249,27 @@ for stor in roles:
 
             print('   ', func['color_name'])
         print()
+
+    if len(role['withdrawals']) > 0:
+        print('  can receive withdrawal through:')
+
+        for f_hash in role['withdrawals']:
+            func = functions[f_hash]
+
+            print('   ', func['color_name'])
+
+        print()
+
+    if len(role['calls']) > 0:
+        print('  can be called by:')
+
+        for f_hash in role['calls']:
+            func = functions[f_hash]
+
+            print('   ', func['color_name'])
+
+        print()
+
 
     print()
 
