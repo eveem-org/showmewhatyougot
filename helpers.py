@@ -15,6 +15,20 @@ def deep_tuple(exp):
     if type(exp) != list:
         return exp
 
+#    if opcode(exp) == 'MASK_SHL' and opcode(exp[4]) == 'STORAGE' and exp[1:3] == exp[4][1:3]:
+#        return deep_tuple(exp[4])
+
+
+    # converts (mask_shl, size, 0, 0, (storage, size, offset, val)) ->
+    #               -> (storage, size, offset, val)  
+
+    if len(exp) == 0:
+        return tuple()
+
+    if exp[0] == 'MASK_SHL' and (exp[2], exp[3]) == (0, 0) and opcode(exp[4]) == 'STORAGE' and\
+        exp[1] == exp[4][1]:
+            return deep_tuple(exp[4])
+
     return tuple(deep_tuple(e) for e in exp)
 
 
