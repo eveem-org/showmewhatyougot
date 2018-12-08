@@ -10,10 +10,10 @@ def opcode(exp):
     else:
         return None
 
-
-def prettify(stor_defs, exp):
-    if opcode(exp) == 'STORAGE' and exp in stor_defs:
-        return stor_defs[exp]
+# == pretty
+def prettify(roles, exp):
+    if opcode(exp) == 'STORAGE' and exp in roles:
+        return roles[exp]['name']
     else:
         return exp
 

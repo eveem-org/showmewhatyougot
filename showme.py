@@ -31,43 +31,43 @@ else:
     exit()
 
 
-functions, stor_defs = load_contract(address, contract_name)
-pretty = partial(prettify, stor_defs)
-
 roles = {}
+
+
+functions, stor_defs = load_contract(address, contract_name)
+pretty = partial(prettify, roles)
+
+
+def add_role(name=None, address=None, definition=None):
+    global roles
+
+    if name is None:
+        assert definition is not None
+        if opcode(definition) == 'STORAGE':
+            name = f'stor_{definition[3]}'
+        else:
+            name = str(definition)
+
+    s = definition or name
+
+    roles[s] = {
+        'name':name,
+        'definition': definition,
+        'setters': list(),
+        'funcs': set(),
+        'withdrawals': set(),
+        'calls': set(),
+        'address': address,
+    }
 
 for s, name in stor_defs.items():
     if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
         role_address = read_address(address, s[3])
-        roles[s] = {
-            'name': name,
-            'definition': s,
-            'setters': list(),
-            'funcs': set(),
-            'withdrawals': set(),
-            'calls': set(),
-            'role_address': role_address
-        }
+        add_role(name, role_address, s)
 
-roles['anyone'] = {
-    'name': '_anyone',
-    'definition': None,
-    'setters': list(),
-    'funcs': set(),
-    'withdrawals': set(),
-    'calls': set(),
-    'role_address': '',
-}
+add_role('_anyone')
+add_role('unknown')
 
-roles['unknown'] = {
-    'name': '_unknown',
-    'definition': None,
-    'setters': list(),
-    'funcs': set(),
-    'withdrawals': set(),
-    'calls': set(),
-    'role_address': '',
-}
 
 def find_opcodes(line, _):
     return opcode(line)
@@ -166,8 +166,6 @@ for f in functions.values():
     if len(res) > 0:
         for (stor, callers) in res:
 
-            print(stor)
-
             affected_roles = set()
             for r in roles:
 
@@ -223,6 +221,9 @@ for f in functions.values():
     res = walk_trace(trace, find_calls)
 
     for addr, wei, f_name, f_params in res:
+        if addr not in roles:
+            add_role(definition=addr)
+
         if wei != 0:
             # withdrawal
             roles[addr]['withdrawals'].add(f['hash'])
@@ -239,15 +240,15 @@ print()
 
 for stor in roles:
 
-    if len(roles[stor]['role_address']) > 0:
-        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['role_address'], C.end)
+    if roles[stor]['address']:
+        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['address'], C.end)
     else:
         print(C.blue, pretty(stor),C.end)
 
-    if len(roles[stor]['setters']) > 0:
+    if roles[stor]['setters']:
         print('  can be changed by:')
         for callers, f_name in roles[stor]['setters']:
-            print('  ', C.green, (', '.join((roles[c]['name']+' '+C.end+C.underline+roles[c]['role_address']+C.end) for c in callers)), C.end, 'in', f_name)
+            print('  ', C.green, (', '.join((roles[c]['name']+' '+C.end+C.underline+roles[c]['address']+C.end) for c in callers)), C.end, 'in', f_name)
         print()
     else:
         if opcode(stor) == 'STORAGE':
