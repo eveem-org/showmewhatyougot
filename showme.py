@@ -13,7 +13,8 @@ if len(sys.argv)>1:
     if address == 'kitties':
         address = '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d'
 else:
-    print("\tusage python parse.py {address}")
+    print("\n\n\tusage `python showme.py {address}`\n\n")
+    exit()
 
 #address = "0x2Ad180cBAFFbc97237F572148Fc1B283b68D8861"
 print()
