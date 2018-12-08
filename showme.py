@@ -114,5 +114,39 @@ for f_hash in open_access:
 
 print()
 
+
 ''' find who can change a given storage '''
+
+
+def find_stor_req(line, knows_true):
+    if opcode(line) != 'STORE':
+        return None
+
+    size, offset, stor_num, arr_idx, value = line[1:]
+
+    if len(arr_idx) > 0:
+        # we're dealing only with storages that are not arrays
+        return None
+
+    return (size, offset, stor_num), knows_true
+
+for f in functions.values():
+    trace = f['trace']
+    res = walk_trace(trace, find_stor_req)
+    if len(res) > 0:
+        print()
+        print(f['color_name'])
+        for (stor, requirements) in res:
+            print('changes', pretty(('STORAGE',)+stor))
+
+
+
+
+
+
+
+
+
+
+
 
