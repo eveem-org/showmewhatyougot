@@ -113,8 +113,6 @@ for f in functions.values():
         if f['hash'] in open_access:
             open_access.remove(f['hash'])
 
-
-
 for admin, funcs in admin_rights.items():
     print(C.green, pretty(admin), C.end)
     for f_hash in funcs:
