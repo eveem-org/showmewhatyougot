@@ -282,7 +282,6 @@ for stor in roles:
     if roles[stor]['setters']:
         print('  can be changed by:')
         for callers, f_name in roles[stor]['setters']:
-#            roles[c]['name']+' '+C.end+C.underline+roles[c]['address']+C.end
             print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
         print()
     else:
