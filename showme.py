@@ -232,8 +232,6 @@ for f in functions.values():
 
 '''
 
-print()
-print()
 
 def find_calls(line, _):
     # todo: delegatecalls
@@ -273,9 +271,6 @@ for f in functions.values():
     find self-destructs
 
 '''
-
-print()
-print()
 
 def find_destructs(line, knows_true):
     # todo: delegatecalls
@@ -334,10 +329,7 @@ for stor in roles:
     if len(role['funcs']) == 0 and len(role['withdrawals']) == 0 and len(role['calls']) == 0:
         continue
 
-    if roles[stor]['value']:
-        print(C.blue, pretty(stor),C.end,C.underline,roles[stor]['value'], C.end)
-    else:
-        print(C.blue, pretty(stor),C.end)
+    print(C.blue, pretty(stor),C.end)
 
     if roles[stor]['setters']:
         print('  can be changed by:')
@@ -397,6 +389,9 @@ for stor in roles:
             print('   ', func['color_name'])
 
         print()
+
+    print('  current value:\n','  ',str(roles[stor]['value']))
+
 
 
     print()

@@ -24,7 +24,7 @@ def load_contract(address, name=None):
         with open(cache_fname) as f:
             contract = json.loads(f.read())
     else:
-        print(f'# fetching {url}...')
+        print(f'{C.blue} # fetching {url}...{C.end}')
         with urllib.request.urlopen(url) as response:
             re = response.read()
             contract = json.loads(re)
@@ -52,11 +52,11 @@ def load_contract(address, name=None):
         if f['getter']:
             stor_defs[f['getter']] = f['name'].split('(')[0]
 
-    print()
-    print(C.blue, '# storage definitions', C.end)
+#    print()
+#    print(C.blue, '# storage definitions', C.end)
 
-    for k,v in stor_defs.items():
-        print('    ', k, C.blue, v, C.end)
+#    for k,v in stor_defs.items():
+#        print('    ', k, C.blue, v, C.end)
 
     return functions, stor_defs
 
