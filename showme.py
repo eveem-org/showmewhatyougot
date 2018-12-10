@@ -22,7 +22,7 @@
 
 import sys
 
-from helpers import opcode, C, prettify
+from helpers import opcode, C
 from contract import load_contract
 from storage import read_address
 
@@ -60,7 +60,6 @@ else:
 
 functions, stor_defs = load_contract(address, contract_name)
 roles = {}
-pretty = partial(prettify, roles)
 
 roles = Roles(functions, stor_defs)
 

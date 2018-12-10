@@ -19,14 +19,6 @@ def opcode(exp):
     else:
         return None
 
-# == pretty
-def prettify(roles, exp):
-    if opcode(exp) == 'STORAGE' and exp in roles:
-        return str(roles[exp].name)
-    else:
-        return str(exp)
-
-
 def deep_tuple(exp):
     if type(exp) != list:
         return exp
