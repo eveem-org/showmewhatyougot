@@ -1,9 +1,3 @@
-from eth_typing import (
-    Address,
-    Hash32
-)
-from eth_utils import denoms
-
 
 precompiled = {
     1: "erecover", # msg_hash =, v = , r = , s =

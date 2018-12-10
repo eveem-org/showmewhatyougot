@@ -12,7 +12,7 @@ def walk_trace(trace, f=print, knows_true=None):
     res = []
     knows_true = knows_true or []
 
-    for line in trace:
+    for idx, line in enumerate(trace):
         found = f(line, knows_true)
 
         if found is not None:
@@ -22,6 +22,8 @@ def walk_trace(trace, f=print, knows_true=None):
             condition, if_true, if_false = line[1:]
             res.extend(walk_trace(if_true, f, knows_true + [condition]))
             res.extend(walk_trace(if_false, f, knows_true + [is_zero(condition)]))
+
+            assert idx == len(trace)-1 # IFs always end the trace tree
             continue
 
         if opcode(line) == 'WHILE':

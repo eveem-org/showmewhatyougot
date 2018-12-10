@@ -1,3 +1,24 @@
+'''
+    ShowMe parses output from Panoramix / eveem.org, and delivers some fun facts
+    about the contract
+'''
+
+'''
+
+    The eveem API is open here:
+    http://eveem.org/code/{address}.json
+    e.g.
+    http://eveem.org/code/0x06012c8cf97bead5deae237070f9587f8e7a266d.json
+
+    The most important field in the API is the 'trace'.
+
+    Trace has the function code in an intermediate language, and in the form that
+    was designed to be easily parsable by analytics tools.
+
+    To understand the 'trace' structure better, see comments in Trace.py.
+
+'''
+
 import sys
 
 from helpers import opcode, C, prettify
@@ -18,6 +39,7 @@ if len(sys.argv) > 1:
         'digix': '0xe0b7927c4af23765cb51314a0e0521a9645f0e2a',
         'aragon': '0x960b236a07cf122663c4303350609a66a7b288c0',
         'medianizer': '0x729d19f657bd0614b4985cf1d82531c67569197b',
+        'dai': '0x729d19f657bd0614b4985cf1d82531c67569197b',
         'arbitrager': '0xc2a694c5ced27e3d3a5a8bd515a42f2b89665003',
         'nocode': '0x1f772db718238d8413bad9b309950a9c5286fd71',
         'destruct': '0xB02bD126cd5477b2C166f8A31fAb75DB0c074371',
@@ -40,6 +62,7 @@ roles = {}
 
 functions, stor_defs = load_contract(address, contract_name)
 pretty = partial(prettify, roles)
+
 
 def add_role(name=None, value=None, definition=None):
     global roles
@@ -73,12 +96,12 @@ for s, name in stor_defs.items():
         role_address = read_address(address, s[3])
         add_role(name, role_address, s)
 
-
 '''
 
     find storages without getters
 
 '''
+
 def find_storages(exp):
     if opcode(exp) == 'STORAGE':
         return exp
@@ -106,6 +129,13 @@ def find_opcodes(line, _):
     return opcode(line)
 
 def get_caller_cond(condition):
+    #  checks if the condition has this format:
+    #  (EQ (MASK_SHL, 160, 0, 0, 'CALLER'), (STORAGE, size, offset, stor_num))
+
+    #  if it does, returns the storage data
+    #
+    #  also, if condition is IS_ZERO(EQ ...), it turns it into just (EQ ...)
+    #  -- technically not correct, but this is a hackathon project, should be good enough :)
 
     if opcode(condition) != 'EQ':
         if opcode(condition) != 'ISZERO':
@@ -142,7 +172,13 @@ def find_caller_req(line, _):
 
 
 
-''' finding a list of admins '''
+''' 
+    
+    finding a list of admins -
+    if the function checks for caller in any way,
+    it returns that comparison as a potential admin
+
+'''
 
 open_access = set(f['hash'] for f in functions.values())
 
@@ -158,8 +194,6 @@ for f in functions.values():
             if r not in roles:
                 add_role(definition=r)
             roles[r]['funcs'].add(f['hash'])
-#            if r in roles.keys():
-#                roles[r]['funcs'].add(f['hash'])
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
 
@@ -173,17 +207,25 @@ for f in functions.values():
             open_access.remove(f['hash'])
 
 
-''' find who can change a given storage '''
+''' 
+    find who can change a given storage 
+'''
 
 def find_stor_req(line, knows_true):
+    # for every line, check if it's (STORE, size, offset, stor_num, _, some value)
+    # if it is, it means that the line writes to storage...
     if opcode(line) != 'STORE':
         return None
 
     size, offset, stor_num, arr_idx, value = line[1:]
 
     if len(arr_idx) > 0:
-        # we're dealing only with storages that are not arrays
+        # we're dealing only with storages that are not arrays for now
         return None
+
+
+    # ok, so it's a storage write - let's backtrack through all the IFs we encountered
+    # before, and see if there were checks for callers there
 
     callers = []
     for cond in knows_true:
@@ -281,7 +323,6 @@ def find_destructs(line, knows_true):
     receiver = line[1]
 
     if receiver == ('MASK_SHL', 160, 0, 0, 'CALLER'):
-        # WARN: should check for knows_true, perhaps a caller can only be someone specific
         receiver = 'anyone'
     elif opcode(receiver) != 'STORAGE' or len(receiver) > 4:
         receiver = 'unknown'
