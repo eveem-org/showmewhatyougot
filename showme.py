@@ -30,6 +30,7 @@ from functools import partial
 from collections import defaultdict
 
 from trace import walk_trace, walk_exp
+from roles import create_roles
 
 if len(sys.argv) > 1:
     param = sys.argv[1]
@@ -57,74 +58,11 @@ else:
     print("\n\n\tusage `python showme.py {address}`\n\n")
     exit()
 
-
-roles = {}
-
-
 functions, stor_defs = load_contract(address, contract_name)
+roles = {}
 pretty = partial(prettify, roles)
 
-
-def add_role(name=None, value=None, definition=None):
-    global roles
-
-    if name is None:
-        assert definition is not None
-        if opcode(definition) == 'STORAGE':
-            name = f'stor_{definition[3]}'
-        else:
-            name = str(definition)
-
-    s = definition or name
-
-    if s in roles:
-        return
-
-    roles[s] = {
-        'name':name,
-        'definition': definition,
-        'setters': list(),
-        'funcs': set(),
-        'withdrawals': set(),
-        'calls': set(),
-        'value': value,
-        'destructs': set(),
-        'destructs_init': set(),
-    }
-
-for s, name in stor_defs.items():
-    if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
-        role_address = read_address(address, s[3])
-        add_role(name, role_address, s)
-
-'''
-
-    find storages without getters
-
-'''
-
-def find_storages(exp):
-    if opcode(exp) == 'STORAGE':
-        return exp
-
-    if opcode(exp) == 'STORE':
-        return ('STORAGE', )+exp[1:4]
-
-
-
-for f in functions.values():
-    trace = f['trace']
-    storages = walk_exp(trace, find_storages)
-    for s in storages:
-        if s not in roles and len(s) == 4 and s[:3] == ('STORAGE', 160, 0):
-            add_role(s)
-
-'''
-    other roles
-'''
-
-add_role('unknown')
-
+roles = create_roles(functions, stor_defs)
 
 def find_opcodes(line, _):
     return opcode(line)
@@ -192,9 +130,9 @@ for f in functions.values():
         f['admins'] = set()
         for r in res:
             f['admins'].add(r)
-            if r not in roles:
-                add_role(definition=r)
-            roles[r]['funcs'].add(f['hash'])
+#            if r not in roles:
+#                add_role(definition=r)
+            roles[r].funcs.add(f['hash'])
             if f['hash'] in open_access:
                 open_access.remove(f['hash'])
 
@@ -264,8 +202,8 @@ for f in functions.values():
             setter = (callers, f['name'])
 
             for role_id in affected_roles:
-                if setter not in roles[role_id]['setters']:
-                    roles[role_id]['setters'].append(setter)
+                if setter not in roles[role_id].setters:
+                    roles[role_id].setters.append(setter)
 
 
 '''
@@ -299,14 +237,11 @@ for f in functions.values():
     res = walk_trace(trace, find_calls)
 
     for addr, wei, f_name, f_params in res:
-        if addr not in roles:
-            add_role(definition=addr)
-
         if wei != 0:
             # withdrawal
-            roles[addr]['withdrawals'].add(f['hash'])
+            roles[addr].withdrawals.add(f['hash'])
         else:
-            roles[addr]['calls'].add(f['hash'])
+            roles[addr].calls.add(f['hash'])
 
 
 '''
@@ -365,76 +300,77 @@ print(f'\n{C.blue} # contract roles{C.end}')
 print()
 
 for stor in roles:
-
     role = roles[stor]
 
-    if len(role['funcs']) == 0 and len(role['withdrawals']) == 0 and len(role['calls']) == 0:
+    if len(role.funcs) == 0 and len(role.withdrawals) == 0 and len(role.calls) == 0:
         continue
 
-    print(C.blue, pretty(stor),C.end)
+    print(C.blue, role.name, C.end)
 
-    if roles[stor]['setters']:
+    if roles[stor].setters:
         print('  can be changed by:')
-        for callers, f_name in roles[stor]['setters']:
-            print('  ', C.green, (', '.join(pretty(c) for c in callers)), C.end, 'in', f_name)
+        for callers, f_name in roles[stor].setters:
+            print('  ', C.green, (', '.join(roles[c].name for c in callers)), C.end, 'in', f_name)
         print()
+        
     else:
         if opcode(stor) == 'STORAGE':
             print('  constant')
             print()
 
-    if len(role['funcs']) > 0:
+    if len(role.funcs) > 0:
         print('  can call those functions:')
 
-        for f_hash in role['funcs']:
+        for f_hash in role.funcs:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
         print()
 
-    if len(role['withdrawals']) > 0:
+    if len(role.withdrawals) > 0:
         print('  can receive withdrawal through:')
 
-        for f_hash in role['withdrawals']:
+        for f_hash in role.withdrawals:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
 
         print()
 
-    if len(role['calls']) > 0:
+    if len(role.calls) > 0:
         print('  can be called by:')
 
-        for f_hash in role['calls']:
+        for f_hash in role.calls:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
 
         print()
 
-    if len(role['destructs']) > 0:
+    if len(role.destructs) > 0:
         print('  can receive selfdestruct:')
 
-        for f_hash in role['destructs']:
+        for f_hash in role.destructs:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
 
         print()
 
-    if len(role['destructs_init']) > 0:
+    if len(role.destructs_init) > 0:
         print('  can initiate selfdestruct:')
 
-        for f_hash in role['destructs_init']:
+        for f_hash in role.destructs_init:
             func = functions[f_hash]
 
             print('   ', func['color_name'])
 
         print()
 
-    print('  current value:\n','  ',str(roles[stor]['value']))
+#    print('  current value:\n','  ',str(roles[stor]['value']))
 
 
 
     print()
+
 

@@ -43,7 +43,7 @@ def load_contract(address, name=None):
 
         for k, v in f.items():
             # converting all the traces, and so on into tuples from lists
-            # tuples are read-only, which we want, and also can work as indexes easier
+            # tuples are read-only, which we want, and also can work as dict indexes easier
 
             f[k] = deep_tuple(v)
 
@@ -51,12 +51,6 @@ def load_contract(address, name=None):
 
         if f['getter']:
             stor_defs[f['getter']] = f['name'].split('(')[0]
-
-#    print()
-#    print(C.blue, '# storage definitions', C.end)
-
-#    for k,v in stor_defs.items():
-#        print('    ', k, C.blue, v, C.end)
 
     return functions, stor_defs
 

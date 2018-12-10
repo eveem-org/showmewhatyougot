@@ -61,7 +61,7 @@ from helpers import opcode, is_zero
     (remaining bits of the storage stay untouched)
 
     (STORE, 256, 0, 2, _receiver, (ADD, 1, (STORAGE, 256, 0, 2, _receiver)))
-    == stor_2[_receiver] = stor_2[_receiver] + 1
+    => stor_2[_receiver] = stor_2[_receiver] + 1
 '''
 
 '''
