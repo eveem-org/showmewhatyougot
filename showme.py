@@ -15,7 +15,8 @@
     Trace has the function code in an intermediate language, and in the form that
     was designed to be easily parsable by analytics tools.
 
-    To understand the 'trace' structure better, see comments in Trace.py.
+
+    To understand the 'trace' structure better, see comments in trace.py.
 
 '''
 

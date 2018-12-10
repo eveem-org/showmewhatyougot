@@ -1,5 +1,51 @@
-from solver.arithmetic import is_zero
-from helpers import opcode
+from helpers import opcode, is_zero
+
+'''
+    Two helper functions to analyse the function traces outputted by
+    http://eveem.org/code/0x06012c8cf97bead5deae237070f9587f8e7a266d.json
+
+    The intermediate language used is not documented anywhere yet in full,
+    but you should get a good understanding of it by analysing the kitties code linked above.
+
+'''
+
+'''
+    Some opcodes that may not be obvious:
+'''
+
+'''
+    (MASK_SHL, size, offset, shl, expression)
+    is the same as:
+    (SHL, (MASK, size, offset, expression), shl)
+    
+    Where "shl" may be negative, in which case it means SHR.
+
+    For example:
+    (MASK_SHL, 4, 16, -8, 0xF00)
+    == 0x70
+'''
+
+'''
+    (STORAGE, size, offset, num[, idx])
+    == MASK_SHL(size, offset, (Storage num[idx]))
+'''
+
+'''
+    (WHILE, condition, trace)
+    repeats trace execution until the condition is no longer true
+'''
+
+'''
+    (LOOP, trace, label)
+    where
+    trace == (line, line..., line, (END_LOOP, label) )
+
+    executes trace
+
+
+
+'''
+
 
 def walk_trace(trace, f=print, knows_true=None):
     '''

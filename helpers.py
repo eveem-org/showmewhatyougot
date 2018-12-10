@@ -4,6 +4,16 @@
 '''
 
 
+def is_zero(exp):
+    if type(exp) == int:
+        return exp == 0
+
+    # (is_zero, (is_zero, bool exp)) => exp
+    if opcode(exp) == 'ISZERO':
+        return exp[1]
+
+    return ('ISZERO', exp)
+
 def opcode(exp):
     if type(exp) in (list, tuple) and len(exp) > 0:
         return exp[0]
