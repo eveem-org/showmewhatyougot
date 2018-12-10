@@ -144,17 +144,17 @@ def walk_trace(trace, f=print, knows_true=None):
             res.extend(walk_trace(if_true, f, knows_true + [condition]))
             res.extend(walk_trace(if_false, f, knows_true + [is_zero(condition)]))
 
-            assert idx == len(trace)-1 # IFs always end the trace tree
+            assert idx == len(trace)-1, trace # IFs always end the trace tree
             continue
 
         if opcode(line) == 'WHILE':
-            condition, trace = line[1:]
-            res.extend(walk_trace(trace, f, knows_true + [is_zero(condition)]))
+            condition, while_trace = line[1:]
+            res.extend(walk_trace(while_trace, f, knows_true + [is_zero(condition)]))
             continue
 
         if opcode(line) == 'LOOP':
-            trace, label = line[1:]
-            res.extend(walk_trace(trace, f, knows_true))
+            loop_trace, label = line[1:]
+            res.extend(walk_trace(loop_trace, f, knows_true))
 
     return res
 
