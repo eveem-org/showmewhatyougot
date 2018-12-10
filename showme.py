@@ -143,21 +143,23 @@ for f in functions.values():
 
 
 ''' 
+    
     find who can change a given storage 
+
 '''
 
 def find_stor_req(line, knows_true):
     # for every line, check if it's (STORE, size, offset, stor_num, _, some value)
     # if it is, it means that the line writes to storage...
+
     if opcode(line) != 'STORE':
         return None
 
-    size, offset, stor_num, arr_idx, value = line[1:]
+    _, size, offset, stor_num, arr_idx, value = line
 
     if len(arr_idx) > 0:
         # we're dealing only with storages that are not arrays for now
         return None
-
 
     # ok, so it's a storage write - let's backtrack through all the IFs we encountered
     # before, and see if there were checks for callers there
@@ -173,33 +175,44 @@ def find_stor_req(line, knows_true):
 
     return ('STORAGE', size, offset, stor_num), callers
 
+
 for f in functions.values():
-    trace = f['trace']
 
-    res = walk_trace(trace, find_stor_req)
-    if len(res) > 0:
-        for (stor, callers) in res:
+    for (stor, callers) in walk_trace(f['trace'], find_stor_req):
 
-            affected_roles = set()
-            for r in roles:
+        affected_roles = set()
+        for r in roles:
 
-                if opcode(r) != 'STORAGE':
-                    continue
+            if opcode(r) != 'STORAGE':
+                continue
 
-                stor_offset, stor_size, stor_num = stor[2], stor[1], stor[3]
-                role_offset, role_size, role_num = r[2], r[1], r[3]
+            assert opcode(stor) == 'STORAGE'
 
-                if stor_offset >= role_offset and stor_offset < role_offset + role_size and stor_num == role_num:
-                    affected_roles.add(r)
+            _, stor_size, stor_offset, stor_num = stor[:4]
+            _, role_size, role_offset, role_num = r[:4]
 
-            # ^ we can't compare roles to storage writes, because that would miss all the partial writes
-            # to a given storage. see 'digix' contract, and how setOwner is set there
+            if stor_num == role_num and \
+               role_offset <= stor_offset < role_offset + role_size:
 
-            setter = (callers, f['name'])
+                affected_roles.add(r)
 
-            for role_id in affected_roles:
-                if setter not in roles[role_id].setters:
-                    roles[role_id].setters.append(setter)
+                # ^ for a role (STORAGE, 160, 0, 1), will catch those:
+                #
+                #   (STORE, 160, 0, 1, value) (exact match)
+                #   (STORE, 256, 0, 1, value) (overwrites a bigger part of the storage containing this role)
+                #   (STORE, 8, 16, 1, value) (overwrites a part of the role's storage - should never happen really)
+                #
+                # and ignores such writes
+                #   (STORE, 8, 160, 1, value)
+
+                # check pause() of `kitties` to see why some writes are ignored
+                # check setOwner() of `digix` to see why sometimes a bigger part of storage is written
+
+        setter = (callers, f['name'])
+
+        for role_id in affected_roles:
+            if setter not in roles[role_id].setters:
+                roles[role_id].setters.append(setter)
 
 
 '''
