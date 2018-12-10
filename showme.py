@@ -30,7 +30,7 @@ from functools import partial
 from collections import defaultdict
 
 from trace import walk_trace, walk_exp
-from roles import create_roles
+from roles import Roles
 
 if len(sys.argv) > 1:
     param = sys.argv[1]
@@ -62,7 +62,7 @@ functions, stor_defs = load_contract(address, contract_name)
 roles = {}
 pretty = partial(prettify, roles)
 
-roles = create_roles(functions, stor_defs)
+roles = Roles(functions, stor_defs)
 
 def find_opcodes(line, _):
     return opcode(line)
@@ -312,7 +312,7 @@ for stor in roles:
         for callers, f_name in roles[stor].setters:
             print('  ', C.green, (', '.join(roles[c].name for c in callers)), C.end, 'in', f_name)
         print()
-        
+
     else:
         if opcode(stor) == 'STORAGE':
             print('  constant')

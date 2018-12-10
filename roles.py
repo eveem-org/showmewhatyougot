@@ -16,67 +16,53 @@ class Role:
         self.destructs_init = set()
 
 class Roles(defaultdict):
+    '''
+        a dictionary of roles, indexed by either a definition, or a name, 
+        if definition is not available
+        
+        e.g.
+        (STORAGE, 160, 0, 1): Role()
+        (STORAGE, 160, 0, 2): Role()
+        'anyone': Role()
+
+    '''
+
+
     def __missing__(self, key):
         self[key] = Role(name=key)
         return self[key]
 
-def create_roles(functions, stor_defs):
-    roles = Roles() #defaultdict(Role)
+    def __init__(self, functions, stor_defs):
+        super(Roles, self).__init__()
 
-    '''
-    def add_role(name=None, definition=None):
-        if name is None:
-            assert definition is not None
-            if opcode(definition) == 'STORAGE':
-                name = f'stor_{definition[3]}'
-            else:
-                name = str(definition)
+        '''
+            create roles for each storage_def that is an address
 
-        s = definition or name
+        '''
 
-        if s in roles:
-            return
+        for s, name in stor_defs.items():
+            # s: (STORAGE, 160, 0, _) => add_role(name, s)
+            if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
+                self[s] = Role(name=name, definition=s)
 
-        roles[s] = {
-            'name':name,
-            'definition': definition,
-            'setters': list(),
-            'funcs': set(),
-            'withdrawals': set(),
-            'calls': set(),
-            'destructs': set(),
-            'destructs_init': set(),
-        }'''
+        '''
+            create roles for every other storage used by contract,
+            even if we cannot find a getter, name for it
 
-    '''
-        create roles for each storage_def that is an address
+        '''
 
-    '''
+        def find_storages(exp):
+            if opcode(exp) == 'STORAGE':
+                return exp
 
-    for s, name in stor_defs.items():
-        # s: (STORAGE, 160, 0, _) => add_role(name, s)
-        if s[:3] == ('STORAGE', 160, 0) and len(s) == 4:
-            roles[s] = Role(name=name, definition=s)
+            if opcode(exp) == 'STORE':
+                return ('STORAGE', ) + exp[1:4]
 
-    '''
-        create roles for every other storage used by contract,
-        even if we cannot find a getter, name for it
+        for f in functions.values():
+            trace = f['trace']
+            storages = walk_exp(trace, find_storages)
+            for s in storages:
+                # def: (STORAGE, 160, 0, stor_num) => add_role('stor_{stor_num}', def)
+                if len(s) == 4 and s[:3] == ('STORAGE', 160, 0) and s not in self:
+                    self[s] = Role(name=f'stor_{s[3]}', definition=s)
 
-    '''
-
-    def find_storages(exp):
-        if opcode(exp) == 'STORAGE':
-            return exp
-
-        if opcode(exp) == 'STORE':
-            return ('STORAGE', ) + exp[1:4]
-
-    for f in functions.values():
-        trace = f['trace']
-        storages = walk_exp(trace, find_storages)
-        for s in storages:
-            # def: (STORAGE, 160, 0, stor_num) => add_role('stor_{stor_num}', def)
-            if len(s) == 4 and s[:3] == ('STORAGE', 160, 0) and s not in roles:
-                roles[s] = Role(name=f'stor_{s[3]}', definition=s)
-
-    return roles
