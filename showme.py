@@ -86,8 +86,21 @@ def get_caller_cond(condition):
     if opcode(stor) == 'STORAGE' and len(stor) == 4:
         # len(stor) == 5 -> indexed storage array, not handling those now
         return stor
+    elif type(stor) == int:
+        return hex(stor)
     else:
-        return None
+        return 'unknown'
+#        return None
+
+# examples of get_caller_cond
+
+CALLER = ('MASK_SHL', 160, 0, 0, 'CALLER')
+OWNER_STORAGE = ('STORAGE', 160, 0, 1)
+SOME_ADDR = 0xe0b7927c4af23765cb51314a0e0521a9645f0e2a
+assert get_caller_cond(('EQ', CALLER, OWNER_STORAGE)) == OWNER_STORAGE
+assert get_caller_cond(('EQ', CALLER, SOME_ADDR)) == hex(SOME_ADDR)
+assert get_caller_cond(('EQ', CALLER, ('WEIRD'))) == 'unknown'
+
 
 
 def find_caller_req(line, _):
