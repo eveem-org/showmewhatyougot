@@ -22,7 +22,7 @@
 
 import sys
 
-from helpers import opcode, C
+from helpers import opcode, C, is_zero
 from contract import load_contract
 from storage import read_address
 
@@ -59,8 +59,6 @@ else:
     exit()
 
 functions, stor_defs = load_contract(address, contract_name)
-roles = {}
-
 roles = Roles(functions, stor_defs)
 
 def find_opcodes(line, _):
@@ -74,12 +72,6 @@ def get_caller_cond(condition):
     #
     #  also, if condition is IS_ZERO(EQ ...), it turns it into just (EQ ...)
     #  -- technically not correct, but this is a hackathon project, should be good enough :)
-
-    if opcode(condition) != 'EQ':
-        if opcode(condition) != 'ISZERO':
-            return None
-        else:
-            condition = condition[1]
 
     if opcode(condition) != 'EQ':
         return None
@@ -106,8 +98,7 @@ def find_caller_req(line, _):
 
     condition, if_true, if_false = line[1:]
 
-    return get_caller_cond(condition)
-
+    return get_caller_cond(condition) or get_caller_cond(is_zero(condition))
 
 
 ''' 
@@ -118,7 +109,26 @@ def find_caller_req(line, _):
 
 '''
 
-open_access = set(f['hash'] for f in functions.values())
+state_changing_functions = set()
+
+for f in functions.values():
+    trace = f['trace']
+    opcodes = walk_trace(trace, find_opcodes)
+
+    side_effects = ['CALL', 'DELEGATECALL', 'CODECALL', 'SELFDESTRUCT', 'STORE', 'CREATE', 'CREATE2']
+    # WARNING: not sure if this is the whole list of state changing operations
+    #           but this is just an API demo...
+
+
+    # if there are opcodes that cause side effects, we add this
+    # function to a list of state_changing functions
+
+    if any(s in opcodes for s in side_effects):
+        state_changing_functions.add(f['hash'])
+
+# let's start by assuming anyone can call every function
+roles['anyone'].funcs = state_changing_functions
+
 
 for f in functions.values():
     trace = f['trace']
@@ -126,23 +136,10 @@ for f in functions.values():
 
     res = walk_trace(trace, find_caller_req)
     if len(res) > 0:
-        f['admins'] = set()
         for r in res:
-            f['admins'].add(r)
-#            if r not in roles:
-#                add_role(definition=r)
             roles[r].funcs.add(f['hash'])
-            if f['hash'] in open_access:
-                open_access.remove(f['hash'])
-
-    opcodes = walk_trace(trace, find_opcodes)
-    side_effects = ['CALL', 'DELEGATECALL', 'CODECALL', 'SELFDESTRUCT', 'STORE']
-    # WARN: ^ the above may not be a complete list
-
-    if all(s not in opcodes for s in side_effects):
-        # read_only function
-        if f['hash'] in open_access:
-            open_access.remove(f['hash'])
+            if f['hash'] in roles['anyone'].funcs:
+                roles['anyone'].funcs.remove(f['hash'])
 
 
 ''' 
