@@ -37,7 +37,7 @@ from helpers import opcode, is_zero
 '''
 
 '''
-    Accessing storage:
+    Reading storage:
 
     (STORAGE, size, offset, num[, idx])
     == MASK_SHL(size, offset, (Storage num[idx]))
@@ -48,6 +48,20 @@ from helpers import opcode, is_zero
 
     (STORAGE, 256, 0, 2, (MASK_SHL, 160, 0, 0, _from))
     == Storage#2[addr(_from)] # so, Storage#2 is a mapping addr=>uint256
+
+'''
+
+'''
+    Writing storage:
+    (STORE, size, offset, num, idx, value)
+
+    E.g.
+    (STORE, 160, 0, 1, null, (MASK_SHL, 160, 0, 0, 'CALLER'))
+    writes function caller address to first 160 bits of Storage 1
+    (remaining bits of the storage stay untouched)
+
+    (STORE, 256, 0, 2, _receiver, (ADD, 1, (STORAGE, 256, 0, 2, _receiver)))
+    == stor_2[_receiver] = stor_2[_receiver] + 1
 '''
 
 '''
@@ -106,7 +120,8 @@ from helpers import opcode, is_zero
 
     As an example, see:
         http://eveem.org/code/0x06012c8cf97bead5deae237070f9587f8e7a266d.json
-    Function
+
+    function
         setSecondsPerBlock(uint256 _secs)
 
     The human-readable, decompiled form (in 'print' attr in json, or on eveem.org) is short,
@@ -120,6 +135,7 @@ from helpers import opcode, is_zero
 
     Also, the best way is to just print out the trace, and compare it to the decompiled output
     on http://www.eveem.org/, or to the one in "print".
+
 '''
 
 def walk_trace(trace, f=print, knows_true=None):
@@ -145,7 +161,7 @@ def walk_trace(trace, f=print, knows_true=None):
             res.extend(walk_trace(if_false, f, knows_true + [is_zero(condition)]))
 
             assert idx == len(trace)-1, trace # IFs always end the trace tree
-            continue
+            break
 
         if opcode(line) == 'WHILE':
             condition, while_trace = line[1:]

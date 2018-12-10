@@ -3,7 +3,6 @@
 
 '''
 
-
 def is_zero(exp):
     if type(exp) == int:
         return exp == 0
@@ -32,11 +31,12 @@ def deep_tuple(exp):
     if type(exp) != list:
         return exp
 
-    # converts (mask_shl, size, 0, 0, (storage, size, offset, val)) ->
-    #               -> (storage, size, offset, val)  
-
     if len(exp) == 0:
         return tuple()
+
+
+    # converts (mask_shl, size, 0, 0, (storage, size, offset, val)) ->
+    #               -> (storage, size, offset, val)  
 
     if exp[0] == 'MASK_SHL' and (exp[2], exp[3]) == (0, 0) and opcode(exp[4]) == 'STORAGE' and\
         exp[1] == exp[4][1] and exp[4][2] == 0:
