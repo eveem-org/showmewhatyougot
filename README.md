@@ -8,6 +8,8 @@ and analyses them to obtain information about contracts linked to a given one.
 
 Check out showme.py and trace.py for the API documentation.
 
+Created in cooperation with Bloxy.info.
+
 ## Installation:
    `git clone https://github.com/kolinko/showmewhatyougot.git`
 
