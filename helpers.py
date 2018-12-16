@@ -34,7 +34,26 @@ def deep_tuple(exp):
         exp[1] == exp[4][1] and exp[4][2] == 0:
             return deep_tuple(exp[4])
 
-    return tuple(deep_tuple(e) for e in exp)
+    exp = tuple(deep_tuple(e) for e in exp)
+    exp = cleanup_mul_1(exp)
+
+    return exp
+
+def cleanup_mul_1(exp):
+    '''
+
+        converts (MUL, 1, X) into plain X within expression
+        this simplification should be done by decompiler, and will
+        be in the next version
+
+    '''
+    if type(exp) != tuple:
+        return exp
+
+    if exp[:2] == ('MUL', 1) and len(exp) == 3:
+        return exp[2]
+
+    return tuple(cleanup_mul_1(e) for e in exp)
 
 
 '''

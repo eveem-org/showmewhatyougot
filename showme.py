@@ -265,6 +265,92 @@ for f in functions.values():
         else:
             roles[addr].calls.add(f['hash'])
 
+'''
+
+    find allowance problems
+    e.g.
+    http://eveem.org/code/0xa0872ee815b8dd0f6937386fd77134720d953581
+    this pattern:
+    https://medium.com/@peckshield/new-allowanyone-bug-identified-in-multiple-erc20-smart-contracts-20d935b5e7ff
+
+    credit Alexey@Bloxy.info for the idea of using this with Eveem
+
+'''
+
+
+def unbound_subs(line, knows_true):
+
+    '''
+        find line that matches this:
+        (STORE, size, offset, idx, (ADD (STORAGE, size, offset, idx), sth))
+    '''
+
+#    if opcode(line) != 'RETURN':
+#        return
+
+    #('ISZERO', ('LT', ('STORAGE', 256, 0, 1, (('MASK_SHL', 160, 0, 0, ('cd', 4)),)), ('cd', 68)))
+
+    if opcode(line) != 'STORE':
+        return None
+
+    store_to, store_val = line[1:5], line[5]
+    if len(store_to[3])==0:
+        print('warn: unindexed storage, not supported')
+        return None
+
+    # processing ('ADD', x, y) for now,
+    # not ('ADD', x, y, z...)
+
+    if opcode(store_val) != 'ADD':
+        return None
+
+    if len(store_val) != 3:
+        print('warn: unsupported ADD')
+        return None
+
+    _, x, y = store_val
+
+    if x == ('STORAGE', ) + store_to:
+        what = y
+    elif y == ('STORAGE', ) + store_to:
+        what = x
+    else:
+        return None
+
+    if opcode(what) != 'MUL':
+        return None
+    if what[1] >= 0:
+        return None
+
+    what = what[2]
+
+    for k in knows_true:
+        s = str(k)
+        if str(what) in s and str(('STORAGE', ) + store_to) in s:
+            break
+    else:
+        return 'unbound!'
+
+
+# find allowance storage
+
+for defin, name in stor_defs.items():
+    if name=='allowance':
+        allow_def = defin
+        break
+else:
+    allow_def = None
+
+# analyse transferFrom function
+
+if '0x23b872dd' in functions: # 0x23b872dd == transferFrom(transferFrom(address,address,uint256))
+    func = functions['0x23b872dd']
+
+    res = walk_trace(func['trace'], unbound_subs)
+
+    if len(res) > 0:
+        print(func['print'])
+        print('potential unbound sub in transferFrom')
 
 '''
 
